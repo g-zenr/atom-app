@@ -4,6 +4,44 @@
  */
 
 export interface paths {
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/alerts` — list the caller's alerts, newest first. */
+        get: operations["list_alerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/alerts/{alert_id}` — read one alert. */
+        get: operations["get_alert"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * `PATCH /api/v1/alerts/{alert_id}` — mark an alert read or unread, and
+         *     record its delivery status.
+         */
+        patch: operations["update_alert"];
+        trace?: never;
+    };
     "/api/v1/api-keys": {
         parameters: {
             query?: never;
@@ -130,6 +168,51 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/automation/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/automation/runs` — list the caller's runs, newest first. */
+        get: operations["list_runs"];
+        put?: never;
+        /**
+         * `POST /api/v1/automation/runs` — start a run.
+         * @description The body, if any, is ignored: a run carries no client-supplied state, and
+         *     its shape is fixed by the schema. The `201` response is the run in its
+         *     `running` state; the workflow finishes it with the patch.
+         */
+        post: operations["start_run"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/automation/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * `PATCH /api/v1/automation/runs/{run_id}` — finish a running run.
+         * @description The `outcome` is required and must be one of the three terminal values.
+         *     A run that has already finished is a `409`; the guard is the statement's
+         *     `WHERE outcome = 'running'`, so two concurrent finishes cannot both win.
+         */
+        patch: operations["finish_run"];
         trace?: never;
     };
     "/api/v1/claims": {
@@ -431,6 +514,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/listings/{listing_id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `GET /api/v1/listings/{listing_id}/observations` — a listing's price
+         *     history, newest first.
+         */
+        get: operations["list_observations"];
+        put?: never;
+        /**
+         * `POST /api/v1/listings/{listing_id}/observations` — record one collected
+         *     price, idempotently.
+         * @description The idempotency identity is the body's `fingerprint` (`ADR-0012` §Decision
+         *     5). A body whose fingerprint was already recorded for this listing is
+         *     **absorbed**: the endpoint answers `200` with the **existing** observation
+         *     and writes nothing, so a retried workflow cannot double-write and cannot
+         *     re-fire the rule it already fired. A new observation answers `201`. The
+         *     rule evaluation runs in the same transaction as the insert; when the
+         *     product has an enabled rule and the observation triggers it, the alert
+         *     exists when the `201` is answered.
+         */
+        post: operations["create_observation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/listings/{listing_id}/observations/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `GET /api/v1/listings/{listing_id}/observations/latest` — the newest
+         *     observation of one listing.
+         * @description A listing with no observations answers `404` on the observation; a
+         *     foreign or absent listing answers `404` on the listing. Both are `404`,
+         *     because the caller may not learn which of the two it is.
+         */
+        get: operations["latest_observation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ml/reindex": {
         parameters: {
             query?: never;
@@ -512,6 +650,140 @@ export interface paths {
         head?: never;
         /** `PATCH /api/v1/notes/{note_id}` — partially update a note. */
         patch: operations["update_note"];
+        trace?: never;
+    };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/products` — list the caller's tracked products. */
+        get: operations["list_products"];
+        put?: never;
+        /** `POST /api/v1/products` — track a product. */
+        post: operations["create_product"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/products/{product_id}` — read one tracked product. */
+        get: operations["get_product"];
+        put?: never;
+        post?: never;
+        /**
+         * `DELETE /api/v1/products/{product_id}` — untrack a product, with its
+         *     listings, observations, rules and alerts.
+         */
+        delete: operations["delete_product"];
+        options?: never;
+        head?: never;
+        /**
+         * `PATCH /api/v1/products/{product_id}` — partially update a tracked
+         *     product. The identity is re-derived from the effective fields.
+         */
+        patch: operations["update_product"];
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** `GET /api/v1/products/{product_id}/listings` — list a product's listings. */
+        get: operations["list_listings"];
+        put?: never;
+        /** `POST /api/v1/products/{product_id}/listings` — track a listing. */
+        post: operations["create_listing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/listings/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * `DELETE /api/v1/products/{product_id}/listings/{listing_id}` — untrack a
+         *     listing, with its observations and their alerts.
+         */
+        delete: operations["delete_listing"];
+        options?: never;
+        head?: never;
+        /**
+         * `PATCH /api/v1/products/{product_id}/listings/{listing_id}` — report on a
+         *     listing: its external identifier, its availability, its validation state.
+         */
+        patch: operations["update_listing"];
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * `GET /api/v1/products/{product_id}/rules` — list a product's rules.
+         * @description At most one rule can be on the page: the schema allows one rule per
+         *     product.
+         */
+        get: operations["list_rules"];
+        put?: never;
+        /**
+         * `POST /api/v1/products/{product_id}/rules` — create the product's rule.
+         * @description A product has at most one rule: a second create is a `409`.
+         */
+        post: operations["create_rule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * `DELETE /api/v1/products/{product_id}/rules/{rule_id}` — delete the rule,
+         *     with the alerts it raised.
+         */
+        delete: operations["delete_rule"];
+        options?: never;
+        head?: never;
+        /**
+         * `PATCH /api/v1/products/{product_id}/rules/{rule_id}` — partially update
+         *     the rule: the switch, the target, or the percent drop.
+         */
+        patch: operations["update_rule"];
         trace?: never;
     };
     "/api/v1/projects": {
@@ -626,6 +898,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description The response body of `GET /api/v1/alerts`. */
+        AlertPage: {
+            /** @description The alerts on this page, newest first. */
+            items: components["schemas"]["AlertResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** @description The public representation of one raised alert. */
+        AlertResponse: {
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /** @description The delivery state of the notification. */
+            notification_status: components["schemas"]["NotificationStatus"];
+            /**
+             * Format: uuid
+             * @description The observation that triggered it.
+             */
+            observation_id: string;
+            /**
+             * Format: date-time
+             * @description When the owner read the alert; `null` while unread.
+             */
+            read_at?: string | null;
+            /**
+             * Format: uuid
+             * @description The rule that fired.
+             */
+            rule_id: string;
+            /**
+             * Format: date-time
+             * @description When the rule fired, RFC 3339 UTC.
+             */
+            triggered_at: string;
+        };
         /**
          * @description The body of `POST /api/v1/api-keys` — the one response that carries the
          *     secret.
@@ -1142,6 +1451,38 @@ export interface components {
              */
             receipt_url?: string | null;
         };
+        /**
+         * @description Request body for tracking a listing of a product.
+         *
+         *     `availability` and `validation_state` are not request fields: a listing is
+         *     born `unknown` and `valid`, and both change through the patch, which is
+         *     the workflow's report about the listing rather than a property the owner
+         *     declares at create time. `id`, `product_id` and the timestamps are
+         *     server-owned.
+         */
+        CreateListingRequest: {
+            /**
+             * @description ISO 4217 code. Trimmed and upper-cased; exactly three letters.
+             * @example EUR
+             */
+            currency: string;
+            /**
+             * @description The retailer's own product identifier, at most 200 characters.
+             * @example 2000510704135
+             */
+            external_id?: string | null;
+            /**
+             * @description Where the price is collected, trimmed to 1 to 100 characters.
+             * @example Notebooksbilliger
+             */
+            retailer: string;
+            /**
+             * @description The canonical listing URL: an absolute `http`/`https` reference of at
+             *     most 2048 characters. Unique per owner.
+             * @example https://www.notebooksbilliger.de/product/lenovo-thinkpad-x1-carbon
+             */
+            url: string;
+        };
         /** @description Request body for creating a note. */
         CreateNoteRequest: {
             /**
@@ -1155,6 +1496,74 @@ export interface components {
              */
             title: string;
         };
+        /**
+         * @description Request body for recording one collected price.
+         *
+         *     The endpoint is idempotent on `fingerprint` (`ADR-0012` §Decision 5): a
+         *     retried workflow re-sends the same fingerprint and is answered `200` with
+         *     the existing observation, so no field of this request is ever written
+         *     twice. `id` and `created_at` are server-owned; `user_id` comes from the
+         *     credential.
+         */
+        CreateObservationRequest: {
+            /**
+             * Format: decimal
+             * @description The collected price, as a four-decimal string. A JSON number is
+             *     refused by the extractor (`ADR-0007`).
+             * @example 1289.9900
+             */
+            amount: string;
+            availability?: null | components["schemas"]["ListingAvailability"];
+            /**
+             * @description The currency the price was quoted in. Trimmed and upper-cased.
+             * @example EUR
+             */
+            currency: string;
+            /**
+             * @description The idempotency identity, 1 to 200 characters: a value the workflow
+             *     derives from product, listing, observed price and collected-at.
+             * @example sha256:9f2b1c
+             */
+            fingerprint: string;
+            /**
+             * Format: date-time
+             * @description When the source was observed — the collected instant, not the write
+             *     instant.
+             * @example 2026-10-31T09:15:00Z
+             */
+            observed_at: string;
+            /**
+             * Format: uuid
+             * @description The automation run that collected this observation. It must belong to
+             *     the caller; a foreign or unknown run is a `404`.
+             */
+            run_id?: string | null;
+        };
+        /**
+         * @description Request body for tracking a product.
+         *
+         *     A product is always created `active`. `normalized_name` and `config_hash`
+         *     are derived by the service and are not request fields; `id`, `user_id` and
+         *     the timestamps are server-owned.
+         */
+        CreateProductRequest: {
+            /**
+             * @description The maker, trimmed to 1 to 100 characters.
+             * @example Lenovo
+             */
+            brand: string;
+            /**
+             * @description The model, trimmed to 1 to 100 characters.
+             * @example ThinkPad X1 Carbon
+             */
+            model: string;
+            /**
+             * @description The configuration that distinguishes otherwise identical models —
+             *     RAM, storage, GPU, CPU, screen. Kept verbatim; defaults to empty.
+             * @example 32GB RAM, 1TB SSD, Ultra 7 155H
+             */
+            specs?: string;
+        };
         /** @description Request body for creating a project. */
         CreateProjectRequest: {
             /**
@@ -1167,6 +1576,32 @@ export interface components {
              * @example ATOM Phase 1
              */
             name: string;
+        };
+        /**
+         * @description Request body for creating a product's rule.
+         *
+         *     A product has at most one rule; creating a second is a `409`. Both
+         *     triggers may be set, exactly one, or — for `percent_drop` — neither. The
+         *     rule is born `enabled`, on the `inbox` channel.
+         */
+        CreateRuleRequest: {
+            /**
+             * Format: int32
+             * @description The alternative trigger: a drop of at least this many percent against
+             *     the previous observation of the same listing. 1 to 99.
+             */
+            percent_drop?: number | null;
+            /**
+             * Format: decimal
+             * @description The target price, as a four-decimal string.
+             * @example 1000.0000
+             */
+            target_amount: string;
+            /**
+             * @description The currency the target is denominated in. Trimmed and upper-cased.
+             * @example EUR
+             */
+            target_currency: string;
         };
         /** @description Request body for creating a task. */
         CreateTaskRequest: {
@@ -1265,6 +1700,36 @@ export interface components {
             message: string;
         };
         /**
+         * @description Request body for finishing a run.
+         *
+         *     The `outcome` is the point of the request and is required; it must be one
+         *     of the three terminal values, because `running` is what the run already
+         *     is. The three counts are optional and default to "leave the stored count"
+         *     (`0` for a fresh run). `error_summary` is a tri-state, because a summary
+         *     must be clearable when a partial run is re-explained.
+         */
+        FinishRunRequest: {
+            /**
+             * Format: int32
+             * @description The number of alerts the run raised.
+             */
+            alerts?: number | null;
+            /** @description The error summary, as a tri-state: absent leaves it, `null` clears it. */
+            error_summary?: string | null;
+            /**
+             * Format: int32
+             * @description The number of failures the run recorded.
+             */
+            failures?: number | null;
+            /**
+             * Format: int32
+             * @description The number of observations the run collected.
+             */
+            observations?: number | null;
+            /** @description The terminal outcome. `running` is refused with a `422`. */
+            outcome: components["schemas"]["RunOutcome"];
+        };
+        /**
          * @description The public representation of a claim line item.
          *
          *     Published with `R2` because the claim detail response contains items; the
@@ -1309,6 +1774,70 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * @description Whether a listing was purchasable when it was last collected.
+         *
+         *     Shared by `product_listings` (the latest report) and `price_observations`
+         *     (the report at the moment of collection); both columns carry the same
+         *     `CHECK`.
+         * @enum {string}
+         */
+        ListingAvailability: "unknown" | "available" | "unavailable";
+        /** @description The response body of `GET /api/v1/products/{product_id}/listings`. */
+        ListingPage: {
+            /** @description The listings on this page. */
+            items: components["schemas"]["ListingResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** @description The public representation of one retailer listing. */
+        ListingResponse: {
+            /** @description The availability the most recent collection reported. */
+            availability: components["schemas"]["ListingAvailability"];
+            /**
+             * Format: date-time
+             * @description Creation timestamp, RFC 3339 UTC.
+             */
+            created_at: string;
+            /**
+             * @description ISO 4217 currency code, three upper-case letters. Immutable once
+             *     created.
+             */
+            currency: string;
+            /** @description The retailer's own product identifier, when one was recorded. */
+            external_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description The `observed_at` of the newest observation, when there is one.
+             */
+            last_observed_at?: string | null;
+            /**
+             * Format: uuid
+             * @description The tracked product this listing sells.
+             */
+            product_id: string;
+            /** @description Where the price is collected, 1 to 100 characters. */
+            retailer: string;
+            /**
+             * Format: date-time
+             * @description Last modification timestamp, RFC 3339 UTC.
+             */
+            updated_at: string;
+            /** @description The canonical listing URL, unique per owner. */
+            url: string;
+            /** @description How much the listing itself is still trusted. */
+            validation_state: components["schemas"]["ListingValidationState"];
+        };
+        /**
+         * @description How much the listing itself is still trusted.
+         * @enum {string}
+         */
+        ListingValidationState: "valid" | "stale" | "rejected";
         /** @description Liveness response body. */
         LiveResponse: {
             /** @description Always `"live"` when the process can serve requests. */
@@ -1424,6 +1953,63 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * @description The delivery state of an alert's notification.
+         * @enum {string}
+         */
+        NotificationStatus: "pending" | "delivered";
+        /**
+         * @description How the owner wants to be told about an alert.
+         * @enum {string}
+         */
+        NotifyVia: "inbox";
+        /** @description The response body of `GET /api/v1/listings/{listing_id}/observations`. */
+        ObservationPage: {
+            /** @description The observations on this page, newest first. */
+            items: components["schemas"]["ObservationResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** @description The public representation of one collected price. */
+        ObservationResponse: {
+            /**
+             * Format: decimal
+             * @description The collected price, as a four-decimal string.
+             * @example 1289.9900
+             */
+            amount: string;
+            /** @description The availability reported with this observation. */
+            availability: components["schemas"]["ListingAvailability"];
+            /**
+             * Format: date-time
+             * @description Write timestamp, RFC 3339 UTC.
+             */
+            created_at: string;
+            /** @description The currency the price was quoted in. */
+            currency: string;
+            /** @description The idempotency identity the workflow supplied. */
+            fingerprint: string;
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The listing this observation was collected from.
+             */
+            listing_id: string;
+            /**
+             * Format: date-time
+             * @description When the source was observed, RFC 3339 UTC.
+             */
+            observed_at: string;
+            /**
+             * Format: uuid
+             * @description The automation run that collected it, when one was named.
+             */
+            run_id?: string | null;
+        };
         /** @description The pagination block returned inside every list response. */
         Pagination: {
             /** @description Whether more items are available after this page. */
@@ -1444,6 +2030,11 @@ export interface components {
              */
             total: number;
         };
+        /**
+         * @description Whether a tracked product is being collected.
+         * @enum {string}
+         */
+        ProductStatus: "active" | "paused";
         /** @description The response body of `GET /api/v1/projects`. */
         ProjectPage: {
             /** @description The projects on this page. */
@@ -1532,6 +2123,106 @@ export interface components {
              * @description Sources already embedded with the current model and dimension.
              */
             skipped: number;
+        };
+        /** @description The response body of `GET /api/v1/products/{product_id}/rules`. */
+        RulePage: {
+            /**
+             * @description The rules on this page; at most one, because a product has at most
+             *     one rule.
+             */
+            items: components["schemas"]["RuleResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** @description The public representation of one target-price rule. */
+        RuleResponse: {
+            /**
+             * Format: date-time
+             * @description Creation timestamp, RFC 3339 UTC.
+             */
+            created_at: string;
+            /** @description Whether the rule is evaluated when an observation arrives. */
+            enabled: boolean;
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /** @description How the owner wants to be told. */
+            notify_via: components["schemas"]["NotifyVia"];
+            /**
+             * Format: int32
+             * @description The alternative trigger, as a percentage; `None` means the rule does
+             *     not watch percentages.
+             */
+            percent_drop?: number | null;
+            /**
+             * Format: uuid
+             * @description The product this rule watches.
+             */
+            product_id: string;
+            /**
+             * Format: decimal
+             * @description The target price, as a four-decimal string.
+             * @example 1000.0000
+             */
+            target_amount: string;
+            /** @description The currency the target is denominated in. */
+            target_currency: string;
+            /**
+             * Format: date-time
+             * @description Last modification timestamp, RFC 3339 UTC.
+             */
+            updated_at: string;
+        };
+        /**
+         * @description The lifecycle state of one automation run.
+         * @enum {string}
+         */
+        RunOutcome: "running" | "ok" | "partial" | "failed";
+        /** @description The response body of `GET /api/v1/automation/runs`. */
+        RunPage: {
+            /** @description The runs on this page, newest first. */
+            items: components["schemas"]["RunResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** @description The public representation of one automation run. */
+        RunResponse: {
+            /**
+             * Format: int32
+             * @description The count the run reported.
+             */
+            alerts: number;
+            /** @description The bounded summary of what went wrong, when the run reported one. */
+            error_summary?: string | null;
+            /**
+             * Format: int32
+             * @description The count the run reported.
+             */
+            failures: number;
+            /**
+             * Format: date-time
+             * @description When the run finished, RFC 3339 UTC; `null` while it is running.
+             */
+            finished_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /**
+             * Format: int32
+             * @description The count the run reported.
+             */
+            observations: number;
+            /** @description The lifecycle state. */
+            outcome: components["schemas"]["RunOutcome"];
+            /**
+             * Format: date-time
+             * @description When the run started, RFC 3339 UTC.
+             */
+            started_at: string;
         };
         /** @description One ranked note in a search response. */
         SearchHit: {
@@ -1661,6 +2352,62 @@ export interface components {
             refresh_token: string;
             /** @description Access token type. Always `Bearer`. */
             token_type: string;
+        };
+        /** @description The response body of `GET /api/v1/products`. */
+        TrackedProductPage: {
+            /** @description The products on this page. */
+            items: components["schemas"]["TrackedProductResponse"][];
+            /** @description Pagination metadata. */
+            pagination: components["schemas"]["Pagination"];
+        };
+        /**
+         * @description The public representation of a tracked product.
+         *
+         *     `user_id` is on the row and is deliberately absent here.
+         *     `normalized_name` and `config_hash` are published because they are the two
+         *     halves of the tracking identity: a client that wants to know why a create
+         *     answered `409` can see exactly what collided.
+         */
+        TrackedProductResponse: {
+            /** @description The maker, 1 to 100 characters. */
+            brand: string;
+            /** @description The lower-case SHA-256 hex digest of the configuration text. */
+            config_hash: string;
+            /**
+             * Format: date-time
+             * @description Creation timestamp, RFC 3339 UTC.
+             */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description Stable public identifier.
+             */
+            id: string;
+            /** @description The model, 1 to 100 characters. */
+            model: string;
+            /** @description The deterministic identity, derived from brand and model. */
+            normalized_name: string;
+            /** @description The configuration text; may be empty. */
+            specs: string;
+            /** @description Whether the product is being collected. */
+            status: components["schemas"]["ProductStatus"];
+            /**
+             * Format: date-time
+             * @description Last modification timestamp, RFC 3339 UTC.
+             */
+            updated_at: string;
+        };
+        /**
+         * @description Request body for partially updating an alert.
+         *
+         *     `read` is the mark the owner sets: `true` stamps `read_at` with the write
+         *     instant, `false` clears it. `notification_status` is the channel's
+         *     delivery report. Both are optional and an omitted field is left untouched.
+         */
+        UpdateAlertRequest: {
+            notification_status?: null | components["schemas"]["NotificationStatus"];
+            /** @description `true` marks the alert read; `false` marks it unread again. */
+            read?: boolean | null;
         };
         /**
          * @description Request body for partially updating an application.
@@ -1849,6 +2596,27 @@ export interface components {
             receipt_url?: string | null;
         };
         /**
+         * @description Request body for partially updating a listing.
+         *
+         *     Only the workflow's report about the listing is patchable. `retailer`,
+         *     `url` and `currency` are **not** fields: the URL is the listing's identity
+         *     per owner (the unique index makes a second row for it a `409`), and
+         *     moving a listing to a new URL is a new listing, not a mutation. A body
+         *     carrying them is accepted and ignored.
+         */
+        UpdateListingRequest: {
+            availability?: null | components["schemas"]["ListingAvailability"];
+            /**
+             * @description The retailer's own product identifier, as a tri-state.
+             *
+             *     * key absent — leave it untouched;
+             *     * `"external_id": null` — clear it;
+             *     * `"external_id": "<text>"` — set it.
+             */
+            external_id?: string | null;
+            validation_state?: null | components["schemas"]["ListingValidationState"];
+        };
+        /**
          * @description Request body for partially updating a note.
          *
          *     Every field is optional. Omitted fields are left untouched; they are never
@@ -1865,12 +2633,57 @@ export interface components {
              */
             title?: string | null;
         };
+        /**
+         * @description Request body for partially updating a tracked product.
+         *
+         *     Every field is optional; an omitted field is left untouched. `specs` is
+         *     kept verbatim, so `""` clears it. `normalized_name` and `config_hash` are
+         *     **not** fields: they are re-derived from whatever `brand`, `model` and
+         *     `specs` the patch leaves behind, so a client cannot make the stored
+         *     identity disagree with the fields it was derived from.
+         */
+        UpdateProductRequest: {
+            /** @description New brand. Trimmed; an empty brand is a validation failure. */
+            brand?: string | null;
+            /** @description New model. Trimmed; an empty model is a validation failure. */
+            model?: string | null;
+            /**
+             * @description New configuration text. `""` clears it; an absent field leaves it
+             *     untouched.
+             */
+            specs?: string | null;
+            status?: null | components["schemas"]["ProductStatus"];
+        };
         /** @description Request body for partially updating a project. */
         UpdateProjectRequest: {
             /** @description New description. */
             description?: string | null;
             /** @description New name. */
             name?: string | null;
+        };
+        /**
+         * @description Request body for partially updating a rule.
+         *
+         *     Every field is optional. `percent_drop` is a tri-state, because `None` is
+         *     a real state of the rule ("does not watch percentages") and not a missing
+         *     value: absent leaves it, an explicit `null` clears it.
+         */
+        UpdateRuleRequest: {
+            /** @description New switch state. Omitted leaves the stored one. */
+            enabled?: boolean | null;
+            /**
+             * Format: int32
+             * @description The percent drop as a tri-state: absent leaves it, `null` clears it.
+             */
+            percent_drop?: number | null;
+            /**
+             * Format: decimal
+             * @description New target price, as a four-decimal string.
+             * @example 950.0000
+             */
+            target_amount?: string | null;
+            /** @description New target currency. Trimmed and upper-cased. */
+            target_currency?: string | null;
         };
         /** @description Request body for partially updating a task. */
         UpdateTaskRequest: {
@@ -1918,6 +2731,238 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_alerts: {
+        parameters: {
+            query?: {
+                /**
+                 * @description When `true`, only alerts with no `read_at`. Omitted or `false` returns
+                 *     all alerts, exactly as the notes archive filter behaves.
+                 */
+                unread?: boolean;
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's alerts, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertPage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_alert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Alert identifier */
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The alert. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The alert does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_alert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Alert identifier */
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAlertRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated alert. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The alert does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     list_api_keys: {
         parameters: {
             query?: {
@@ -2496,6 +3541,223 @@ export interface operations {
             };
             /** @description Too many attempts. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_runs: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's automation runs, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunPage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    start_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run was started and is running. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResponse"];
+                };
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    finish_run: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Automation run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishRunRequest"];
+            };
+        };
+        responses: {
+            /** @description The finished run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The run does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The run has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4717,6 +5979,254 @@ export interface operations {
             };
         };
     };
+    list_observations: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Listing identifier */
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The listing's observations, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationPage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The listing does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Listing identifier */
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateObservationRequest"];
+            };
+        };
+        responses: {
+            /** @description The fingerprint was already recorded: the existing observation is returned unchanged, and nothing was written. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationResponse"];
+                };
+            };
+            /** @description The observation was recorded; the product's enabled rule was evaluated in the same transaction. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The listing, or the run named in the body, does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    latest_observation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Listing identifier */
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The newest observation of the listing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The listing has no observation yet, or does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     reindex: {
         parameters: {
             query?: never;
@@ -5185,6 +6695,1076 @@ export interface operations {
                 };
             };
             /** @description The resource does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_products: {
+        parameters: {
+            query?: {
+                /** @description Only products in this status. An unknown value is a `422`. */
+                status?: components["schemas"]["ProductStatus"];
+                /**
+                 * @description Case-insensitive substring over brand, model and the normalised name.
+                 *
+                 *     At most 200 characters. An empty term means "no filter".
+                 * @example thinkpad
+                 */
+                search?: string;
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's tracked products, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackedProductPage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description The product is now tracked, active. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackedProductResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description A product with this name and configuration is already tracked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The tracked product. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackedProductResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The product and everything under it were deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated product. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackedProductResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The patch collides with another product of the same owner. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_listings: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The product's listings, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingPage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_listing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateListingRequest"];
+            };
+        };
+        responses: {
+            /** @description The listing is now tracked. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description A listing with this URL is already tracked. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_listing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+                /** @description Listing identifier, addressable only inside its product */
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The listing and everything under it were deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The listing does not exist under that product, or either is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_listing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+                /** @description Listing identifier, addressable only inside its product */
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateListingRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated listing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The listing does not exist under that product, or either is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_rules: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Maximum number of items to return.
+                 *
+                 *     Defaults to `api.pagination.default_limit` and is capped at
+                 *     `api.pagination.max_limit`.
+                 */
+                limit?: number;
+                /** @description Number of items to skip. Defaults to 0. */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The product's rules, newest first; at most one. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulePage"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description The rule was created, enabled, on the inbox channel. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product does not exist or is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The product already has a rule. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request body is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    delete_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+                /** @description Rule identifier, addressable only inside its product */
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The rule and its alerts were deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The rule does not exist under that product, or either is not owned by the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The request timed out. */
+            408: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description An unexpected failure occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_rule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Tracked product identifier */
+                product_id: string;
+                /** @description Rule identifier, addressable only inside its product */
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description The updated rule. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleResponse"];
+                };
+            };
+            /** @description The request is malformed. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication is required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description The rule does not exist under that product, or either is not owned by the caller. */
             404: {
                 headers: {
                     [name: string]: unknown;

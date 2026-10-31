@@ -52,5 +52,11 @@ export function buildQuery(entries: Record<string, QueryValue>): Record<string, 
   return out;
 }
 
-/** The page size requested from list endpoints. The API clamps it to its own bound. */
+/** The page size requested from the notes list. The API clamps it to its own bound. */
 export const NOTES_PAGE_SIZE = 20;
+
+/** The page size requested from the projects list. The API clamps it to its own bound. */
+export const PROJECTS_PAGE_SIZE = 20;
+
+/** The page size requested from a project's task list. The API clamps it to its own bound. */
+export const TASKS_PAGE_SIZE = 20;

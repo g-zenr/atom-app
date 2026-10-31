@@ -29,7 +29,7 @@ export function LoginForm() {
     const result = await submitAuthForm("/api/auth/login", { email, password });
     if (result.ok) {
       // The cookie is already set; a full refresh picks the session up.
-      router.replace("/notes");
+      router.replace("/dashboard");
       router.refresh();
       return;
     }
