@@ -8,14 +8,17 @@ import { usePathname } from "next/navigation";
  *
  * The sections that are not built yet are listed as visibly disabled items —
  * honest placeholders that go nowhere and render no pages. They are not links
- * and do not pretend to work.
+ * and do not pretend to work. Tasks have no top-level entry of their own:
+ * they live inside their project's detail page.
  */
 
-const BUILT = [{ href: "/notes", label: "Notes" }] as const;
+const BUILT = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/notes", label: "Notes" },
+  { href: "/projects", label: "Projects" },
+] as const;
 
 const NOT_BUILT = [
-  "Projects",
-  "Tasks",
   "Reimbursements",
   "Job applications",
   "Monitoring",

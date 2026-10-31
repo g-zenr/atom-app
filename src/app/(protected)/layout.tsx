@@ -32,7 +32,7 @@ export default async function ProtectedLayout({
     <div className="shell">
       <header className="shell-header">
         <div className="shell-header-inner">
-          <Link href="/notes" className="brand">
+          <Link href="/dashboard" className="brand">
             ATOM
           </Link>
           <Nav />

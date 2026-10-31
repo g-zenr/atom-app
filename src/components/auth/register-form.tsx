@@ -32,7 +32,7 @@ export function RegisterForm() {
     });
     if (result.ok) {
       // Registration signs the user in: the handler stored the pair.
-      router.replace("/notes");
+      router.replace("/dashboard");
       router.refresh();
       return;
     }

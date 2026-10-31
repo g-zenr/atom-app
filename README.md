@@ -16,12 +16,19 @@ credential — every backend call is made server-side by this Next.js app.
   "not built yet" sections, loading/empty/error states.
 - **Feature 2 — Authentication:** sign in, registration, sign out, session
   renewal — through an HttpOnly-cookie BFF (design below).
+- **Feature 3 — Dashboard:** a real-data overview assembled from the existing
+  list endpoints' first pages (recent notes, projects, sampled tasks with an
+  honestly-labelled progress figure, recent claims and applications).
 - **Feature 4 — Notes:** paginated list with the shared pagination envelope,
   full-text search, create, edit, delete, archive/unarchive via PATCH.
+- **Feature 5 — Projects & tasks:** paginated, searchable project list with
+  inline creation; project detail with edit, cascading delete, and the
+  project's tasks (status/priority filters, create, edit, delete,
+  done/reopen) in the backend's manual order.
 
-Everything else (projects, tasks, reimbursements, job applications, ML search,
-monitoring) is **not built** and appears in the navigation only as a disabled
-placeholder that goes nowhere.
+Reimbursements, job applications and monitoring are still **not built** and
+appear in the navigation only as disabled placeholders that go nowhere; the
+dashboard reads their list endpoints for display only.
 
 ## Prerequisites
 
@@ -170,12 +177,17 @@ Implemented:
 - [x] Loading / empty / error states; accessible forms (labels,
       `aria-invalid`, focus-visible)
 - [x] Navigation with honest "not built yet" placeholders
-- [x] Unit tests for the error envelope, pagination helpers and cookie options
+- [x] Dashboard: counts, recent items and task progress from first-page
+      fetches only, with honest "of recent" labels; no invented endpoints
+- [x] Projects: paginated list, search, create; detail with edit, delete
+      (confirm) and the nested tasks module
+- [x] Tasks: status/priority filters via query params, create, edit, delete,
+      done/reopen via PATCH, server-side ordering preserved
+- [x] Unit tests for the error envelope, pagination helpers, cookie options,
+      task-progress helpers and task field guards
 
 Explicitly **not** built (matching the plan's later features):
 
-- [ ] Projects
-- [ ] Tasks
 - [ ] Reimbursements
 - [ ] Job applications
 - [ ] ML note search (`POST /api/v1/notes/search`) — the list endpoint's

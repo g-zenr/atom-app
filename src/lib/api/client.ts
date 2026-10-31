@@ -80,6 +80,20 @@ export type NotePage = components["schemas"]["NotePage"];
 export type CreateNoteRequest = components["schemas"]["CreateNoteRequest"];
 export type UpdateNoteRequest = components["schemas"]["UpdateNoteRequest"];
 export type Pagination = components["schemas"]["Pagination"];
+export type ProjectResponse = components["schemas"]["ProjectResponse"];
+export type ProjectPage = components["schemas"]["ProjectPage"];
+export type CreateProjectRequest = components["schemas"]["CreateProjectRequest"];
+export type UpdateProjectRequest = components["schemas"]["UpdateProjectRequest"];
+export type TaskResponse = components["schemas"]["TaskResponse"];
+export type TaskPage = components["schemas"]["TaskPage"];
+export type CreateTaskRequest = components["schemas"]["CreateTaskRequest"];
+export type UpdateTaskRequest = components["schemas"]["UpdateTaskRequest"];
+export type TaskStatus = components["schemas"]["TaskStatus"];
+export type TaskPriority = components["schemas"]["TaskPriority"];
+export type ClaimResponse = components["schemas"]["ClaimResponse"];
+export type ClaimPage = components["schemas"]["ClaimPage"];
+export type ApplicationResponse = components["schemas"]["ApplicationResponse"];
+export type ApplicationPage = components["schemas"]["ApplicationPage"];
 
 // ---------------------------------------------------------------------------
 // The generic request function
@@ -257,4 +271,131 @@ export function deleteNote(noteId: string, accessToken: string): Promise<null> {
     params: { note_id: noteId },
     token: accessToken,
   }) as Promise<null>;
+}
+
+// ---------------------------------------------------------------------------
+// Operation wrappers — projects
+// ---------------------------------------------------------------------------
+
+export type ListProjectsQuery = NonNullable<ApiQuery<"/api/v1/projects", "get">>;
+
+export function listProjects(query: ListProjectsQuery, accessToken: string): Promise<ProjectPage> {
+  return apiFetch("get", "/api/v1/projects", { query, token: accessToken }) as Promise<ProjectPage>;
+}
+
+export function createProject(
+  body: CreateProjectRequest,
+  accessToken: string,
+): Promise<ProjectResponse> {
+  return apiFetch("post", "/api/v1/projects", { body, token: accessToken }) as Promise<ProjectResponse>;
+}
+
+export function getProject(projectId: string, accessToken: string): Promise<ProjectResponse> {
+  return apiFetch("get", "/api/v1/projects/{project_id}", {
+    params: { project_id: projectId },
+    token: accessToken,
+  }) as Promise<ProjectResponse>;
+}
+
+/**
+ * PATCH is partial: only send the fields that changed. Never send `null` —
+ * an omitted key is what leaves a stored value untouched. The description may
+ * legitimately be set to "" (the contract's way of clearing it).
+ */
+export function updateProject(
+  projectId: string,
+  body: UpdateProjectRequest,
+  accessToken: string,
+): Promise<ProjectResponse> {
+  return apiFetch("patch", "/api/v1/projects/{project_id}", {
+    params: { project_id: projectId },
+    body,
+    token: accessToken,
+  }) as Promise<ProjectResponse>;
+}
+
+/** Deletes the project and every task inside it (the backend cascades). */
+export function deleteProject(projectId: string, accessToken: string): Promise<null> {
+  return apiFetch("delete", "/api/v1/projects/{project_id}", {
+    params: { project_id: projectId },
+    token: accessToken,
+  }) as Promise<null>;
+}
+
+// ---------------------------------------------------------------------------
+// Operation wrappers — tasks (always nested in a project)
+// ---------------------------------------------------------------------------
+
+export type ListTasksQuery = NonNullable<ApiQuery<"/api/v1/projects/{project_id}/tasks", "get">>;
+
+/** A project with no tasks answers an empty page, never a 404. */
+export function listTasks(
+  projectId: string,
+  query: ListTasksQuery,
+  accessToken: string,
+): Promise<TaskPage> {
+  return apiFetch("get", "/api/v1/projects/{project_id}/tasks", {
+    params: { project_id: projectId },
+    query,
+    token: accessToken,
+  }) as Promise<TaskPage>;
+}
+
+export function createTask(
+  projectId: string,
+  body: CreateTaskRequest,
+  accessToken: string,
+): Promise<TaskResponse> {
+  return apiFetch("post", "/api/v1/projects/{project_id}/tasks", {
+    params: { project_id: projectId },
+    body,
+    token: accessToken,
+  }) as Promise<TaskResponse>;
+}
+
+/**
+ * PATCH is partial, as for projects. Setting `status` to "done" stamps
+ * `completed_at`; any other status clears it — both are backend-owned.
+ */
+export function updateTask(
+  taskId: string,
+  body: UpdateTaskRequest,
+  accessToken: string,
+): Promise<TaskResponse> {
+  return apiFetch("patch", "/api/v1/tasks/{task_id}", {
+    params: { task_id: taskId },
+    body,
+    token: accessToken,
+  }) as Promise<TaskResponse>;
+}
+
+export function deleteTask(taskId: string, accessToken: string): Promise<null> {
+  return apiFetch("delete", "/api/v1/tasks/{task_id}", {
+    params: { task_id: taskId },
+    token: accessToken,
+  }) as Promise<null>;
+}
+
+// ---------------------------------------------------------------------------
+// Operation wrappers — claims and job applications (dashboard reads)
+// ---------------------------------------------------------------------------
+
+export type ListClaimsQuery = NonNullable<ApiQuery<"/api/v1/claims", "get">>;
+
+/** The caller's claims, newest first. Read-only here: no UI module yet. */
+export function listClaims(query: ListClaimsQuery, accessToken: string): Promise<ClaimPage> {
+  return apiFetch("get", "/api/v1/claims", { query, token: accessToken }) as Promise<ClaimPage>;
+}
+
+export type ListApplicationsQuery = NonNullable<ApiQuery<"/api/v1/job-applications", "get">>;
+
+/** The caller's applications, newest first. Read-only here: no UI module yet. */
+export function listApplications(
+  query: ListApplicationsQuery,
+  accessToken: string,
+): Promise<ApplicationPage> {
+  return apiFetch("get", "/api/v1/job-applications", {
+    query,
+    token: accessToken,
+  }) as Promise<ApplicationPage>;
 }
